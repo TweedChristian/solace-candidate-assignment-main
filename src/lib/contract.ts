@@ -15,4 +15,13 @@ export const appContract = c.router({
     },
     summary: "Get many advocates",
   },
+  seed: {
+    method: "POST",
+    path: "/api/seed",
+    responses: {
+      200: advocateSchema.array(),
+    },
+    body: null,
+    summary: "Initialize list of advocates",
+  },
 });
