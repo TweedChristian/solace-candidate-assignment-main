@@ -1,15 +1,18 @@
-import { advocates } from "@/db/schema";
+import { advocates, specialties } from "@/db/schema";
 import { initContract } from "@ts-rest/core";
 import { createSelectSchema } from "drizzle-zod";
 
 const c = initContract();
 
-const advocateSchema = createSelectSchema(advocates);
+const specialtySchema = createSelectSchema(specialties);
+const advocateSchema = createSelectSchema(advocates).extend({
+  specialties: specialtySchema.array(),
+});
 
 export const appContract = c.router({
   getAdvocates: {
     method: "GET",
-    path: "/api/advocates",
+    path: "/advocates",
     responses: {
       200: advocateSchema.array(),
     },
@@ -17,7 +20,7 @@ export const appContract = c.router({
   },
   seed: {
     method: "POST",
-    path: "/api/seed",
+    path: "/seed",
     responses: {
       200: advocateSchema.array(),
     },
