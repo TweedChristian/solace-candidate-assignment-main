@@ -33,7 +33,6 @@ export default function Home() {
 
   return (
     <>
-      <h1>Solace Advocates</h1>
       <br />
       <br />
       <div>
