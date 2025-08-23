@@ -57,7 +57,7 @@ const handler = createNextHandler(
       };
     },
   },
-  { handlerType: "app-router", responseValidation: true, basePath: "/api" }
+  { handlerType: "app-router", responseValidation: true }
 );
 
 export {

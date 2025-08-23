@@ -1,2 +1,2 @@
 export { appContract } from "./contract";
-export { client } from "./client";
+export { tsr } from "./client";
