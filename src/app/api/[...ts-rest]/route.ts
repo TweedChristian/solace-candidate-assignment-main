@@ -3,14 +3,17 @@ import { advocates, advocateSpecialties, specialties } from "@/db/schema";
 import { appContract } from "@/lib";
 import { createNextHandler } from "@ts-rest/serverless/next";
 import { seed } from "@/db/seed/seed";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 const handler = createNextHandler(
   appContract,
   {
     getAdvocates: async () => {
       //Normally I'd use the drizzle query syntax here, but wanted to use sql queries to demonstrate familiarity
-      const advocateData = await db.select().from(advocates);
+      const advocateData = await db
+        .select()
+        .from(advocates)
+        .orderBy(desc(advocates.yearsOfExperience));
 
       const advocateSpecialtyData = await db
         .select({
