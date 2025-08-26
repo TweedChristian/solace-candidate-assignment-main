@@ -3,10 +3,11 @@ import {
   pgTable,
   integer,
   text,
-  jsonb,
   serial,
   timestamp,
   bigint,
+  primaryKey,
+  unique,
 } from "drizzle-orm/pg-core";
 
 const advocates = pgTable("advocates", {
@@ -15,10 +16,47 @@ const advocates = pgTable("advocates", {
   lastName: text("last_name").notNull(),
   city: text("city").notNull(),
   degree: text("degree").notNull(),
-  specialties: jsonb("payload").default([]).notNull(),
   yearsOfExperience: integer("years_of_experience").notNull(),
   phoneNumber: bigint("phone_number", { mode: "number" }).notNull(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at")
+    .default(sql`CURRENT_TIMESTAMP`)
+    .$onUpdate(() => sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
 
-export { advocates };
+const specialties = pgTable("specialties", {
+  id: serial("id").primaryKey(),
+  specialtyTitle: text("specialty_title").notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at")
+    .default(sql`CURRENT_TIMESTAMP`)
+    .$onUpdate(() => sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+});
+
+const advocateSpecialties = pgTable(
+  "advocate_specialties",
+  {
+    advocateId: integer("advocate_id")
+      .notNull()
+      .references(() => advocates.id, {
+        onUpdate: "cascade",
+        onDelete: "cascade",
+      }),
+    specialtyId: integer("specialty_id")
+      .notNull()
+      .references(() => specialties.id, {
+        onUpdate: "cascade",
+        onDelete: "cascade",
+      }),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.advocateId, table.specialtyId] }),
+    unique().on(table.advocateId, table.specialtyId),
+  ]
+);
+
+export { advocates, specialties, advocateSpecialties };

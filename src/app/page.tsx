@@ -1,91 +1,78 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { tsr } from "@/lib";
+import AdvocatesTable from "./advocates-table";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [advocates, setAdvocates] = useState([]);
-  const [filteredAdvocates, setFilteredAdvocates] = useState([]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    console.log("fetching advocates...");
-    fetch("/api/advocates").then((response) => {
-      response.json().then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
-      });
-    });
-  }, []);
+  const { data, isPending, isError, error } = tsr.getAdvocates.useQuery({
+    queryKey: ["advocates"] as const,
+  });
 
-  const onChange = (e) => {
-    const searchTerm = e.target.value;
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(name, value);
 
-    document.getElementById("search-term").innerHTML = searchTerm;
+      return params.toString();
+    },
+    [searchParams]
+  );
 
-    console.log("filtering advocates...");
-    const filteredAdvocates = advocates.filter((advocate) => {
-      return (
-        advocate.firstName.includes(searchTerm) ||
-        advocate.lastName.includes(searchTerm) ||
-        advocate.city.includes(searchTerm) ||
-        advocate.degree.includes(searchTerm) ||
-        advocate.specialties.includes(searchTerm) ||
-        advocate.yearsOfExperience.includes(searchTerm)
-      );
-    });
+  const searchTerm = useMemo(
+    () => searchParams.get("searchTerm") ?? "",
+    [searchParams]
+  );
 
-    setFilteredAdvocates(filteredAdvocates);
-  };
+  const setSearchTerm = useCallback(
+    (searchTerm: string) => {
+      router.push(pathname + "?" + createQueryString("searchTerm", searchTerm));
+    },
+    [router, pathname, createQueryString]
+  );
 
-  const onClick = () => {
-    console.log(advocates);
-    setFilteredAdvocates(advocates);
-  };
+  if (isError) {
+    console.error(error);
+    return (
+      <Alert variant={"destructive"}>
+        <AlertTitle>Unable to Load Advocates</AlertTitle>
+      </Alert>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Advocates</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <main style={{ margin: "24px" }}>
-      <h1>Solace Advocates</h1>
-      <br />
-      <br />
-      <div>
-        <p>Search</p>
-        <p>
-          Searching for: <span id="search-term"></span>
-        </p>
-        <input style={{ border: "1px solid black" }} onChange={onChange} />
-        <button onClick={onClick}>Reset Search</button>
-      </div>
-      <br />
-      <br />
-      <table>
-        <thead>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>City</th>
-          <th>Degree</th>
-          <th>Specialties</th>
-          <th>Years of Experience</th>
-          <th>Phone Number</th>
-        </thead>
-        <tbody>
-          {filteredAdvocates.map((advocate) => {
-            return (
-              <tr>
-                <td>{advocate.firstName}</td>
-                <td>{advocate.lastName}</td>
-                <td>{advocate.city}</td>
-                <td>{advocate.degree}</td>
-                <td>
-                  {advocate.specialties.map((s) => (
-                    <div>{s}</div>
-                  ))}
-                </td>
-                <td>{advocate.yearsOfExperience}</td>
-                <td>{advocate.phoneNumber}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </main>
+    <Card>
+      <CardHeader>
+        <CardTitle>Advocates</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <AdvocatesTable
+          advocates={data.body}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+        />
+      </CardContent>
+    </Card>
   );
 }
