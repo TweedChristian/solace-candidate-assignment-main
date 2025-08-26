@@ -63,7 +63,7 @@ export default function AdvocatesTable({
   setSearchTerm: (s: string) => void;
 }>) {
   return (
-    <div>
+    <>
       <div className="flex justify-end">
         <Input
           placeholder="Filter Advocates"
@@ -78,6 +78,6 @@ export default function AdvocatesTable({
         data={advocates}
         globalFilter={searchTerm}
       ></DataTable>
-    </div>
+    </>
   );
 }

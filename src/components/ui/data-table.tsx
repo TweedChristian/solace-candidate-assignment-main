@@ -6,9 +6,12 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getSortedRowModel,
+  Header,
+  SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -17,12 +20,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useCallback, useState } from "react";
+import { Button } from "./button";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   globalFilter?: string;
   globalFilterFn?: FilterFn<TData>;
+  initalSortingState?: SortingState;
 }
 
 export function DataTable<TData, TValue>({
@@ -30,16 +36,35 @@ export function DataTable<TData, TValue>({
   data,
   globalFilter,
 }: DataTableProps<TData, TValue>) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     globalFilterFn: "includesString",
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    enableSortingRemoval: true,
     state: {
       globalFilter,
+      sorting,
     },
   });
+
+  const getArrowForHeader = useCallback((header: Header<TData, unknown>) => {
+    const sorted = header.column.getIsSorted();
+    if (sorted === false) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+
+    if (sorted === "asc") {
+      return <ArrowUp className="ml-2 h-4 w-4" />;
+    }
+
+    return <ArrowDown className="ml-2 h-4 w-4" />;
+  }, []);
 
   return (
     <div className="overflow-hidden rounded-md border">
@@ -50,12 +75,18 @@ export function DataTable<TData, TValue>({
               {headerGroup.headers.map((header) => {
                 return (
                   <TableHead key={header.id} className="whitespace-nowrap">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                    <Button
+                      variant="ghost"
+                      onClick={() => header.column.toggleSorting()}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                      {getArrowForHeader(header)}
+                    </Button>
                   </TableHead>
                 );
               })}
