@@ -7,6 +7,7 @@ import {
   timestamp,
   bigint,
   primaryKey,
+  unique,
 } from "drizzle-orm/pg-core";
 
 const advocates = pgTable("advocates", {
@@ -52,7 +53,10 @@ const advocateSpecialties = pgTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .$onUpdate(() => sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   },
-  (table) => [primaryKey({ columns: [table.advocateId, table.specialtyId] })]
+  (table) => [
+    primaryKey({ columns: [table.advocateId, table.specialtyId] }),
+    unique().on(table.advocateId, table.specialtyId),
+  ]
 );
 
 export { advocates, specialties, advocateSpecialties };
