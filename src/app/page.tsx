@@ -1,82 +1,78 @@
 "use client";
-
 import { tsr } from "@/lib";
-import { ChangeEvent, useState } from "react";
+import AdvocatesTable from "./advocates-table";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const { data, isPending, isError } = tsr.getAdvocates.useQuery({
+  const { data, isPending, isError, error } = tsr.getAdvocates.useQuery({
     queryKey: ["advocates"] as const,
   });
 
-  const onChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(name, value);
 
-  const onReset = () => {
-    setSearchTerm("");
-  };
+      return params.toString();
+    },
+    [searchParams]
+  );
 
-  const filteredAdvocates = (data?.body ?? []).filter((advocate) => {
+  const searchTerm = useMemo(
+    () => searchParams.get("searchTerm") ?? "",
+    [searchParams]
+  );
+
+  const setSearchTerm = useCallback(
+    (searchTerm: string) => {
+      router.push(pathname + "?" + createQueryString("searchTerm", searchTerm));
+    },
+    [router, pathname, createQueryString]
+  );
+
+  if (isError) {
+    console.error(error);
     return (
-      advocate.firstName.includes(searchTerm) ||
-      advocate.lastName.includes(searchTerm) ||
-      advocate.city.includes(searchTerm) ||
-      advocate.degree.includes(searchTerm) ||
-      advocate.specialties?.find((specialty) =>
-        specialty.specialtyTitle.includes(searchTerm)
-      ) ||
-      `${advocate.yearsOfExperience}`.includes(searchTerm)
+      <Alert variant={"destructive"}>
+        <AlertTitle>Unable to Load Advocates</AlertTitle>
+      </Alert>
     );
-  });
+  }
+
+  if (isPending) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Advocates</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <>
-      <br />
-      <br />
-      <div>
-        <p>Search</p>
-        <p>
-          Searching for: <span id="search-term"></span>
-        </p>
-        <input style={{ border: "1px solid black" }} onChange={onChange} />
-        <button onClick={onReset}>Reset Search</button>
-      </div>
-      <br />
-      <br />
-      <table>
-        <thead>
-          <tr>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>City</th>
-            <th>Degree</th>
-            <th>Specialties</th>
-            <th>Years of Experience</th>
-            <th>Phone Number</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredAdvocates.map((advocate) => {
-            return (
-              <tr key={advocate.id}>
-                <td>{advocate.firstName}</td>
-                <td>{advocate.lastName}</td>
-                <td>{advocate.city}</td>
-                <td>{advocate.degree}</td>
-                <td>
-                  {advocate.specialties.map(({ specialtyTitle, id }) => (
-                    <div key={id}>{specialtyTitle}</div>
-                  ))}
-                </td>
-                <td>{advocate.yearsOfExperience}</td>
-                <td>{advocate.phoneNumber}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </>
+    <Card>
+      <CardHeader>
+        <CardTitle>Advocates</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <AdvocatesTable
+          advocates={data.body}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+        />
+      </CardContent>
+    </Card>
   );
 }
